@@ -12,7 +12,7 @@ it is written by python.
 4. inivite the bot to server
 5. use `ctl.autoconigcreate [role.name]`(Administrator only)
 6. Open config/server.id.yml, fill blanks(service name to control)
-7. create and edit /etc/sudoers.d/distemctl, you can use berow template
+7. create and edit /etc/sudoers.d/distemctl, you can use following template
 ```
 run_user ALL=(root) NOPASSWD: /usr/bin/systemctl start service_name
 run_user ALL=(root) NOPASSWD: /usr/bin/systemctl restart service_name
