@@ -1,0 +1,23 @@
+**Description**
+This bot can remotely manipulate the systemd services of a server.
+
+**Commands**
+```
+ctl.help : show the list of commands.
+
+ctl.list : Show the list of services.
+
+ctl.status <service.name> : Show the service status.
+
+# The following commands can only be used by authorized roles.
+
+ctl.start <service.name> : Start the service.
+
+ctl.restart <service.name> : Restart the service.
+
+ctl.stop <service.name> : Stop the service.
+
+# Last commands can only be used by administrator.
+
+ctl.autoconfigcreate [role.name] : Create (Reset) config yml file.
+```
