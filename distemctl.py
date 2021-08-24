@@ -1,5 +1,6 @@
 import logging
 import subprocess
+from subprocess import PIPE
 
 import discord
 
@@ -78,7 +79,8 @@ async def on_message(message):
         for i in services:
             if arg == i:
                 command = f'sudo systemctl status {arg}'
-                result = subprocess.run(command, shell=True).stdout
+                proc = subprocess.run(command, shell=True, stdout=PIPE, stderr=PIPE)
+                result = proc.stdout
                 await message.channel.send(f'```\n{result}\n```')
                 return
         await message.channel.send(error_Not_found)
