@@ -17,7 +17,7 @@ ctl.restart <service.name> : Restart the service.
 
 ctl.stop <service.name> : Stop the service.
 
-# Last commands can only be used by administrator.
+# Last command can only be used by administrator.
 
 ctl.autoconfigcreate [role.name] : Create (Reset) config yml file.
 ```

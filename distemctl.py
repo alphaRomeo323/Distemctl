@@ -2,7 +2,6 @@ import logging
 import subprocess
 
 import discord
-from discord import user
 
 from operation import general
 
@@ -167,8 +166,6 @@ async def on_message(message):
                     await message.channel.send(f'Done!\nplease use `ctl.status {arg}` to see status.')
                 return
         await message.channel.send(error_Not_found)
-
-
 
 
 client.run(config.passToken())
