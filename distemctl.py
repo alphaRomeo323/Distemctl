@@ -98,7 +98,7 @@ async def on_message(message):
     try:
         args = parse_arg(message.content)
         if len(args) == 0:
-            message.channel.send('Please type service name.')
+            await message.channel.send('Please type service name.')
             return
         services = convert_services(args, message.guild.id) # raise keyerror when not found in config
     except KeyError as e:
@@ -107,9 +107,7 @@ async def on_message(message):
 
     # PREFIX+status <service.name> : Show the service's status.
     if message.content.startswith(PREFIX+'status'):
-
         file: bool = message.content.startswith(PREFIX+'status-file')
-
         for service in services:
             command = f'sudo systemctl status {service}'
             proc = subprocess.run(command, shell=True, stdout=PIPE, stderr=PIPE, text=True)
@@ -144,7 +142,6 @@ async def on_message(message):
     
     # PREFIX+restart <service.name> : Restart the service.
     if message.content.startswith(PREFIX+'restart'):
-
         for service in services:
             command = f'sudo systemctl restart {service}'
             result = subprocess.run(command, shell=True).returncode
