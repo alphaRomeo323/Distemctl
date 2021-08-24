@@ -129,7 +129,7 @@ async def on_message(message):
 
         services = config.getServiceList(server)
         if arg in services:
-            command = f'sudo systemctl retart {arg}'
+            command = f'sudo systemctl restart {arg}'
             result = subprocess.run(command, shell=True).returncode
             if result != 0:
                 await message.channel.send(f'Service was failed to retart with error code {result}. \nplease use `ctl.status {arg}` to see status.')
