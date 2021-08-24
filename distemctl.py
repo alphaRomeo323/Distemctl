@@ -79,7 +79,7 @@ async def on_message(message):
         for i in services:
             if arg == i:
                 command = f'sudo systemctl status {arg}'
-                proc = subprocess.run(command, shell=True, stdout=PIPE, stderr=PIPE)
+                proc = subprocess.run(command, shell=True, stdout=PIPE, stderr=PIPE, text=True)
                 result = proc.stdout
                 await message.channel.send(f'```\n{result}\n```')
                 return
