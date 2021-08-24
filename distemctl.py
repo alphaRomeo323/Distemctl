@@ -76,14 +76,13 @@ async def on_message(message):
             await message.channel.send(error_Incorrect_configuration)
             return
         services = config.getServiceList(server)
-        for i in services:
-            if arg == i:
-                command = f'sudo systemctl status {arg}'
-                proc = subprocess.run(command, shell=True, stdout=PIPE, stderr=PIPE, text=True)
-                result = proc.stdout
-                await message.channel.send(f'```\n{result}\n```')
-                return
-        await message.channel.send(error_Not_found)
+        if arg in services:
+            command = f'sudo systemctl status {arg}'
+            proc = subprocess.run(command, shell=True, stdout=PIPE, stderr=PIPE, text=True)
+            result = proc.stdout
+            await message.channel.send(f'```\n{result}\n```')
+        else:
+            await message.channel.send(error_Not_found)
 
     # ctl.start <service.name> : Start the service.
     if message.content.startswith('ctl.start'):
@@ -102,16 +101,15 @@ async def on_message(message):
             return
 
         services = config.getServiceList(server)
-        for i in services:
-            if arg == i:
-                command = f'sudo systemctl start {arg}'
-                result = subprocess.run(command, shell=True).returncode
-                if result != 0:
-                    await message.channel.send(f'Service was failed to start with error code {result}. \nplease use `ctl.status {arg}` to see status.')
-                else:
-                    await message.channel.send(f'Done!\nplease use `ctl.status {arg}` to see status.')
-                return
-        await message.channel.send(error_Not_found)
+        if arg in services:
+            command = f'sudo systemctl start {arg}'
+            result = subprocess.run(command, shell=True).returncode
+            if result != 0:
+                await message.channel.send(f'Service was failed to start with error code {result}. \nplease use `ctl.status {arg}` to see status.')
+            else:
+                await message.channel.send(f'Done!\nplease use `ctl.status {arg}` to see status.')
+        else:
+            await message.channel.send(error_Not_found)
     
     # ctl.restart <service.name> : Restart the service.
     if message.content.startswith('ctl.restart'):
@@ -130,16 +128,16 @@ async def on_message(message):
             return
 
         services = config.getServiceList(server)
-        for i in services:
-            if arg == i:
-                command = f'sudo systemctl retart {arg}'
-                result = subprocess.run(command, shell=True).returncode
-                if result != 0:
-                    await message.channel.send(f'Service was failed to retart with error code {result}. \nplease use `ctl.status {arg}` to see status.')
-                else:
-                    await message.channel.send(f'Done!\nplease use `ctl.status {arg}` to see status.')
-                return
-        await message.channel.send(error_Not_found)
+        if arg in services:
+            command = f'sudo systemctl retart {arg}'
+            result = subprocess.run(command, shell=True).returncode
+            if result != 0:
+                await message.channel.send(f'Service was failed to retart with error code {result}. \nplease use `ctl.status {arg}` to see status.')
+            else:
+                await message.channel.send(f'Done!\nplease use `ctl.status {arg}` to see status.')
+            return
+        else:
+            await message.channel.send(error_Not_found)
 
     # ctl.stop <service.name> : Stop the service.
     if message.content.startswith('ctl.stop'):
@@ -158,16 +156,15 @@ async def on_message(message):
             return
 
         services = config.getServiceList(server)
-        for i in services:
-            if arg == i:
-                command = f'sudo systemctl stop {arg}'
-                result = subprocess.run(command, shell=True).returncode
-                if result != 0:
-                    await message.channel.send(f'Service was failed to stop with error code {result}. \nplease use `ctl.status {arg}` to see status.')
-                else:
-                    await message.channel.send(f'Done!\nplease use `ctl.status {arg}` to see status.')
-                return
-        await message.channel.send(error_Not_found)
+        if arg in services:
+            command = f'sudo systemctl stop {arg}'
+            result = subprocess.run(command, shell=True).returncode
+            if result != 0:
+                await message.channel.send(f'Service was failed to stop with error code {result}. \nplease use `ctl.status {arg}` to see status.')
+            else:
+                await message.channel.send(f'Done!\nplease use `ctl.status {arg}` to see status.')
+        else:
+            await message.channel.send(error_Not_found)
 
 
 client.run(config.passToken())
