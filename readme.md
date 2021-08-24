@@ -41,7 +41,7 @@ systemctl statusコマンドを実行し、結果を表示します。
 systemctl startコマンドを用いてサービスを起動させます。
 許可されたロールまたは管理者権限を持つ方のみ使用できます。
 
-### ctl.restat service.name
+### ctl.restart service.name
 
 systemctl restartコマンドを用いてサービスを再起動させます。
 許可されたロールまたは管理者権限を持つ方のみ使用できます。
