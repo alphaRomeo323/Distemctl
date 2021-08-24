@@ -24,9 +24,8 @@ def CheckPermission(User: discord.Member, ID: int):
     allowedRoles = config.getRoleList(ID)
     memberRoles = User.roles
     for memberRole in memberRoles:
-        for allowedRole in allowedRoles:
-            if memberRole.name == allowedRole:
-                return True
+        if memberRole.name in allowedRoles:
+            return True
     return False
 
 @client.event
