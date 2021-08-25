@@ -6,12 +6,12 @@ it is written by python.
 
 ## Usage(easy)
 
-1. Install python3, PyYAML and Discordpy.
-2. Open config/general.yml, fill blanks(bot token)
-3. Run `python3 distemctl.py`
+1. install python3, PyYAML and Discordpy.
+2. open config/general.yml, fill blanks(bot token)
+3. run `python3 distemctl.py`
 4. inivite the bot to server
 5. use `ctl.autoconigcreate [role.name]`(Administrator only)
-6. Open config/server.id.yml, fill blanks(service name to control)
+6. open config/server_id.yml, fill blanks(service name to control)
 7. create and edit /etc/sudoers.d/distemctl, you can use following template
 ```
 run_user ALL=(root) NOPASSWD: /usr/bin/systemctl start service_name
@@ -26,6 +26,11 @@ Distemctl is in development, feel free to:
 
 * file bugs using issues
 * pushing new futures / bug fixes with pull requests
+
+## Special Thanks
+
+* ozraru
+  Refacted source code.
 
 ## コマンドリファレンス(Japanese)
 
