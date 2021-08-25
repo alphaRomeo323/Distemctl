@@ -17,7 +17,6 @@ config = general.ConfigFileOperator()
 
 #Set error message.
 error_Incorrect_configuration = 'Incorrect configuration: Either the config file does not exist or the format is different.'
-error_Not_found = 'Not found: This service is not registered in the config file.'
 error_Permission_denied_1 = 'Permission denied: This command can be executed by only administrator'
 error_Permission_denied_2 = 'Permission denied: You do not have the role to use this command.'
 error_over_length_message = f'Too large: Result is more than 2000 characters. To send by file, {PREFIX}status-file'
