@@ -19,10 +19,10 @@ class ConfigFileOperator:
             print(e, file=sys.stderr)
             sys.exit(1)
 
-    def passToken(self):
+    def pass_token(self):
         return self.loadedToken
     
-    def checkFileForm(self, ID: int):
+    def check_file_form(self, ID: int):
         if os.path.isfile(f'{self.configDirectory}/{ID}.yml') == False:
             print(f'{ID}.yml does not exist...')
             return False
@@ -37,17 +37,17 @@ class ConfigFileOperator:
                 return False
         return True
 
-    def createNewServerConfig(self, ID: int, AllowedRole: list):
-        yml = {'Service': [''], 'Role': AllowedRole}
+    def create_new_server_config(self, ID: int, AllowedRole: list):
+        yml = {'Service': {"control_name": "service_name"}, 'Role': AllowedRole}
         with codecs.open(f'{self.configDirectory}/{ID}.yml', 'w', 'utf-8') as f:
             yaml.dump(yml, f, encoding='utf-8', allow_unicode=True)
 
-    def getServiceList(self, ID: int):
+    def get_service_list(self, ID: int):
         with open(f'{self.configDirectory}/{ID}.yml') as file:
             yml = yaml.safe_load(file)
             return yml['Service']
     
-    def getRoleList(self, ID: int):
+    def get_role_list(self, ID: int):
         with open(f'{self.configDirectory}/{ID}.yml') as file:
             yml = yaml.safe_load(file)
             return yml['Role']

@@ -128,6 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# server config filr
+# server config file
 /config/*
 !/config/general.yml
