@@ -6,7 +6,7 @@ it is written by python.
 
 ## Usage(easy)
 
-1. install python3, PyYAML and Discordpy.
+1. install python3, PyYAML and Discord.py.
 2. open config/general.yml, fill blanks(bot token)
 3. run `python3 distemctl.py`
 4. inivite the bot to server
@@ -29,7 +29,7 @@ Distemctl is in development, feel free to:
 
 ## Special Thanks
 
-* ozraru
+* ozraru  
   Refacted source code.
 
 ## コマンドリファレンス(Japanese)
