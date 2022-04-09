@@ -130,7 +130,7 @@ for id_enable in config.get_guild_ids():
             service: Option(str, "Service you want to start", choices=service_list)
         ):
             """Start the service."""
-            proc = subprocess.run(f"systemctl start {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+            proc = subprocess.run(f"sudo systemctl start {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True)
             if proc.stderr:
                 await ctx.respond("```\n" + proc.stderr + "\n```")
             else:
@@ -145,7 +145,7 @@ for id_enable in config.get_guild_ids():
         ):
             """Stop the service."""
             try:
-                proc = subprocess.run(f"systemctl stop {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True,timeout=1)
+                proc = subprocess.run(f"sudo systemctl stop {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True,timeout=1)
             # respond timeout countermeasures
             except subprocess.TimeoutExpired as e:
                 print(e)
