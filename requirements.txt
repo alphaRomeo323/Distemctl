@@ -2,7 +2,7 @@ aiohttp==3.7.4.post0
 async-timeout==3.0.1
 attrs==19.3.0
 chardet==3.0.4
-discord.py==1.7.3
+pycord==2.0.0b5
 idna==2.8
 multidict==5.1.0
 PyYAML==5.3.1

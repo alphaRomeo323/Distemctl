@@ -1,167 +1,159 @@
-from io import StringIO
-import logging
+#!/bin/python
+import discord
+from discord.commands import permissions, Option
+import yaml
+import codecs
+import sys
 import subprocess
 from subprocess import PIPE
 
-import discord
+#Class
+### load general.yml
+class ConfigFileOperator:
+    configDirectory = 'config'
 
-from operation import general
+    def __init__(self):
+        try:
+            #print(subprocess.run("ls", shell=True).stdout) #debug
+            with open(f'{self.configDirectory}/general.yml') as file:
+                self.yml = yaml.safe_load(file)
+        except Exception as e:
+            print('Exception occurred while loading general.yml...', file=sys.stderr)
+            print(e, file=sys.stderr)
+            sys.exit(1)
 
-logging.basicConfig(level=logging.INFO)
+    # get token
+    def pass_token(self):
+        return self.yml['token']
 
-PREFIX = "ctl."
-COMMANDS = ["help","autoconfigcreate","list","status","status-file","start","restart","stop"]
+    #get guild_id
+    def get_guild_ids(self):
+        guild_list=[]
+        for guild_data in self.yml['guilds']:
+            guild_list.append(guild_data['id'])
+        return guild_list
 
-client = discord.Client()
-config = general.ConfigFileOperator()
+    # get role names
+    def get_permitted_roles(self, guild_id):
+        role_list=[]
+        for guild_data in self.yml['guilds']:
+            if guild_data['id'] == guild_id:
+                try:
+                    return guild_data['permitted_roles']
+                except:
+                    print('Exception occurred while loading general.yml...')
+                    return []
 
-#Set error message.
-error_Incorrect_configuration = 'Incorrect configuration: Either the config file does not exist or the format is different.'
-error_Permission_denied_1 = 'Permission denied: This command can be executed by only administrator'
-error_Permission_denied_2 = 'Permission denied: You do not have the role to use this command.'
-error_over_length_message = f'Too large: Result is more than 2000 characters. To send by file, {PREFIX}status-file'
+    # get systemd service name
+    def get_service(self, guild_id, masked_service):
+        role_list=[]
+        for guild_data in self.yml['guilds']:
+            if guild_data['id'] == guild_id:
+                try:
+                    return guild_data['services'][masked_service]
+                except:
+                    print(f"'{masked_service}' is not found")
+                    return ''
 
-# Global Function
-def check_permission(User: discord.Member, ID: int):
-    if User.guild_permissions.administrator:
-        return True
-    allowedRoles = config.get_role_list(ID)
-    memberRoles = User.roles
-    for memberRole in memberRoles:
-        if memberRole.name in allowedRoles:
-            return True
-    return False
+    # get list of services
+    def get_service_list(self, guild_id):
+        for guild_data in self.yml['guilds']:
+            if guild_data['id'] == guild_id:
+                try:
+                    return list(guild_data['services'].keys())
+                except:
+                    print('Exception occurred while loading general.yml...')
+                    return []
 
-def parse_arg(message: str):
-    return message.split()[1:] #split message and remove first
+# add objects
+bot = discord.Bot()
+config = ConfigFileOperator()
 
-def convert_services(args: list, server_id: int) -> list[str]:
-    valid_services = config.get_service_list(server_id)
-    args_services: list = []
-    for arg in args:
-        if arg in valid_services:
-            args_services.append(valid_services[arg])
-        else:
-            raise KeyError(arg)
-    return args_services
+# slash commands
+# with guild_id in general.yml
+for id_enable in config.get_guild_ids():
 
+    #/ping
+    @bot.slash_command(guild_ids=[id_enable])
+    async def ping(ctx):
+        """Pong!"""
+        proc = subprocess.run("ping -c 2 -i 0.5 discord.com | sed -n -e 5p -e 7p ", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+        await ctx.respond(proc.stdout)
 
-@client.event
-async def on_ready():
-    print(f'We have logged in as {client.user}')
+    #/help
+    @bot.slash_command(guild_ids=[id_enable])
+    async def help(ctx):
+        """Show the command list"""
+        await ctx.respond("\
+            `/ping`: Pong!\n\
+            `/help`: show the command list\n\
+            `/services`: Show the list of services.\n\
+            `/status <service>`: Show the service's status.\n\
+            ** With Permission**:\n\
+            `/start <service>`: Start the service.\n\
+            `/stop <service>`: Stop the service.\
+            ")
+    ##### with service list
+    service_list = config.get_service_list(id_enable)
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
+    #/services
+    @bot.slash_command(guild_ids=[id_enable])
+    async def services(ctx):
+        """Show the list of services."""
+        tmp = ''
+        for service in service_list:
+            tmp += service + "\n"
+        await ctx.respond('```\n' + tmp + '```')
 
-    if not message.content.startswith(PREFIX):
-        return
-
-    # When add command, you should add to COMMANDS in start of file
-
-    if not message.content.split()[0].replace(PREFIX, "") in COMMANDS:
-        await message.channel.send("Command not found")
-        return
-
-    # PREFIX+help : show the list of commands
-    if message.content.startswith(PREFIX+'help'):
-        file = open('help.txt', 'r')
-        description = file.read()
-        await message.channel.send(description)
-        return
-
-    # PREFIX+autoconfigcreate [role.name] : Create config yml file.
-    if message.content.startswith(PREFIX+'autoconfigcreate'):
-        args = parse_arg(message.content)
-        if message.author.guild_permissions.administrator:
-            config.create_new_server_config(message.guild.id,args)
-            await message.channel.send(f'Created server config into config/{message.guild.id}.yml .\nplease add some service name on the file.')
-        else:
-            await message.channel.send(error_Permission_denied_1)
-        return
-    
-    ##### need config
-    
-    if config.check_file_form(message.guild.id) == False:
-        await message.channel.send(error_Incorrect_configuration)
-        return
-
-    # PREFIX+list : Show the list of services.
-    if message.content.startswith(PREFIX+'list'):
-        await message.channel.send(f'```\n{config.get_service_list(message.guild.id).keys()}\n```')
-        return
-    
     ##### with service name
 
-    try:
-        args = parse_arg(message.content)
-        if len(args) == 0:
-            await message.channel.send('Please type service name.')
-            return
-        services = convert_services(args, message.guild.id) # raise keyerror when not found in config
-    except KeyError as e:
-        await message.channel.send(f'Not found: {e} service is not registered in the config file.')
-        return
-
-    # PREFIX+status <service.name> : Show the service's status.
-    if message.content.startswith(PREFIX+'status'):
-        file: bool = message.content.startswith(PREFIX+'status-file')
-        for service in services:
-            command = f'sudo systemctl status {service}'
-            proc = subprocess.run(command, shell=True, stdout=PIPE, stderr=PIPE, text=True)
-            result = proc.stdout
-            if file:
-                result_file: discord.File = discord.File(StringIO(result), filename=service+".txt")
-                await message.channel.send("", file=result_file)
-            else:
-                if len(f'```\n{result}\n```') > 2000:
-                    await message.channel.send(error_over_length_message)
-                    return
-                await message.channel.send(f'```\n{result}\n```')
-        return
+    #/status <service>
+    @bot.slash_command(guild_ids=[id_enable])
+    async def status(
+        ctx,
+        service: Option(str, "Service you want to check the status of", choices=service_list)
+    ):
+        """Show the service's status."""
+        proc = subprocess.run(f"systemctl status {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+        await ctx.respond("```\n" + proc.stdout + "\n```")
 
     ##### need permission
 
-    if check_permission(message.author, message.guild.id) == False:
-        await message.channel.send(error_Permission_denied_2)
-        return
+    roles=config.get_permitted_roles(id_enable)
+    if len(roles) > 0:
 
-    # PREFIX+start <service.name> : Start the service.
-    if message.content.startswith(PREFIX+'start'):
-        for service in services:
-            command = f'sudo systemctl start {service}'
-            result = subprocess.run(command, shell=True).returncode
-            if result != 0:
-                await message.channel.send(f'{service} was failed to retart with error code {result}. \nplease use `{PREFIX}status {" ".join(args)}` to see status.')
+        #/start <service>
+        @bot.slash_command(guild_ids=[id_enable])
+        @permissions.has_any_role(roles)
+        async def start(
+            ctx,
+            service: Option(str, "Service you want to start", choices=service_list)
+        ):
+            """Start the service."""
+            proc = subprocess.run(f"systemctl start {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+            if proc.stderr:
+                await ctx.respond("```\n" + proc.stderr + "\n```")
+            else:
+                await ctx.respond("Process was done. Check if it is active with`/ctl status`. ")
+
+        #/stop <service>
+        @bot.slash_command(guild_ids=[id_enable])
+        @permissions.has_any_role(roles)
+        async def stop(
+            ctx,
+            service: Option(str, "Service you want to stop", choices=service_list)
+        ):
+            """Stop the service."""
+            try:
+                proc = subprocess.run(f"systemctl stop {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True,timeout=1)
+            # respond timeout countermeasures
+            except subprocess.TimeoutExpired as e:
+                print(e)
+                await ctx.respond("Process was timed out. Check if it is stoped with`/ctl status`. ")
                 return
-        
-        await message.channel.send(f'Done!\nplease use `{PREFIX}status {" ".join(args)}` to see status.')
-        return
-    
-    # PREFIX+restart <service.name> : Restart the service.
-    if message.content.startswith(PREFIX+'restart'):
-        for service in services:
-            command = f'sudo systemctl restart {service}'
-            result = subprocess.run(command, shell=True).returncode
-            if result != 0:
-                await message.channel.send(f'{service} was failed to retart with error code {result}. \nplease use `{PREFIX}status {" ".join(args)}` to see status.')
-                return
-        
-        await message.channel.send(f'Done!\nplease use `{PREFIX}status {" ".join(args)}` to see status.')
-        return
+            if proc.stderr:
+                await ctx.respond("```\n" + proc.stderr + "\n```")
+            else:
+                await ctx.respond("Process was done. Check if it is stoped with`/ctl status`. ")
 
-    # PREFIX+stop <service.name> : Stop the service.
-    if message.content.startswith(PREFIX+'stop'):
-        for service in services:
-            command = f'sudo systemctl stop {service}'
-            result = subprocess.run(command, shell=True).returncode
-            if result != 0:
-                await message.channel.send(f'{service} was failed to retart with error code {result}. \nplease use `{PREFIX}status {" ".join(args)}` to see status.')
-                return
-        
-        await message.channel.send(f'Done!\nplease use `{PREFIX}status {" ".join(args)}` to see status.')
-        return
-
-
-client.run(config.pass_token())
+bot.run(config.pass_token())

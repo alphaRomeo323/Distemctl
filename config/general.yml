@@ -1,1 +1,7 @@
 token: ''
+guilds:
+- id: ''
+  permitted_roles: 'Admin'
+  services:
+    foo: 'foo.service'
+    bar: 'hoge.service'
