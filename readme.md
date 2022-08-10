@@ -6,7 +6,7 @@ it is written by python.
 
 ## Usage(easy)
 
-1. install python3, PyYAML and Pycord.
+1. install python3, PyYAML and Discord.py(Latest Dev).
 2. open config/general.yml, fill blanks(bot token,guild_id,role names,service_name)
 3. create and edit /etc/sudoers.d/distemctl, you can use following template
 ```
