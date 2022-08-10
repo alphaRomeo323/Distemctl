@@ -137,15 +137,15 @@ async def on_message(message):
         return
     
     ##### with service name
-    try:
-        args = parse_arg(message.content)
-        if len(args) == 0:
-            await message.channel.send('Please type service name.')
-            return
-        service = config.get_service(args, message.guild.id) # raise keyerror when not found in config
-    except KeyError as e:
-        await message.channel.send(f'Not found: {e} service is not registered in the config file.')
+    args = parse_arg(message.content)
+    if len(args) == 0:
+        await message.channel.send('Please type service name.')
         return
+    service = config.get_service(message.guild.id, args[0])
+    if not service:
+        await message.channel.send(f'Not found: {args[0]} service is not registered in the config file.')
+        return
+
     
     # PREFIX+status : Show the service status.
     if message.content.startswith(PREFIX+'status'):
