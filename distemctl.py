@@ -1,11 +1,24 @@
 #!/bin/python
+from http import client
 import discord
-from discord.commands import permissions, Option
 import yaml
 import codecs
 import sys
 import subprocess
 from subprocess import PIPE
+
+
+# var
+
+PREFIX = "ctl."
+TIMEOUT = 5 #sec
+COMMANDS = ["help","ping","services","status","start","restart","stop"]
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
+
+error_unknown_guild = "This server is not listed in config."
+error_Permission_denied = "Permission denied: You do not have the role to use this command."
 
 #Class
 ### load general.yml
@@ -66,94 +79,128 @@ class ConfigFileOperator:
                     return []
 
 # add objects
-bot = discord.Bot()
+client = discord.Client(intents=intents)
 config = ConfigFileOperator()
 
-# slash commands
-# with guild_id in general.yml
-for id_enable in config.get_guild_ids():
+# Global Function
+def parse_arg(message: str):
+    return message.split()[1:] #split message and remove first
 
-    #/ping
-    @bot.slash_command(guild_ids=[id_enable])
-    async def ping(ctx):
-        """Pong!"""
-        proc = subprocess.run("ping -c 2 -i 0.5 discord.com | sed -n -e 5p -e 7p ", shell=True, stdout=PIPE, stderr=PIPE, text=True)
-        await ctx.respond(proc.stdout)
+def check_permission(User: discord.Member, ID: int):
+    if User.guild_permissions.administrator:
+        return True
+    allowedRoles = config.get_permitted_roles(ID)
+    memberRoles = User.roles
+    for memberRole in memberRoles:
+        if memberRole.name in allowedRoles:
+            return True
+    return False
 
-    #/help
-    @bot.slash_command(guild_ids=[id_enable])
-    async def help(ctx):
-        """Show the command list"""
-        await ctx.respond("\
-            `/ping`: Pong!\n\
-            `/help`: show the command list\n\
-            `/services`: Show the list of services.\n\
-            `/status <service>`: Show the service's status.\n\
-            ** With Permission**:\n\
-            `/start <service>`: Start the service.\n\
-            `/stop <service>`: Stop the service.\
-            ")
+
+# commands
+
+@client.event
+async def on_message(message):
+    if not message.content.startswith(PREFIX):
+        return
+    
+    # When add command, you should add to COMMANDS in start of file
+    if not message.content.split()[0].replace(PREFIX, "") in COMMANDS:
+        await message.channel.send("Command not found")
+        return
+    
+    # PREFIX+help : show the list of commands
+    if message.content.startswith(PREFIX+'help'):
+        file = open('help.txt', 'r')
+        description = file.read()
+        await message.channel.send(description)
+        return
+    
+    # PREFIX+ping : Pong!
+    if message.content.startswith(PREFIX+'ping'):
+        proc = subprocess.run("ping -c 1 -i 0.5 discord.com | sed -n -e 5p -e 7p ", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+        await message.channel.send(proc.stdout)
+        return
+
     ##### with service list
-    service_list = config.get_service_list(id_enable)
-
-    #/services
-    @bot.slash_command(guild_ids=[id_enable])
-    async def services(ctx):
-        """Show the list of services."""
+    service_list = config.get_service_list(message.guild.id)
+    if not service_list:
+        await message.channel.send(error_unknown_guild)
+        return
+    
+    # PREFIX+services : Show the list of services.
+    if message.content.startswith(PREFIX+'services'):
         tmp = ''
         for service in service_list:
             tmp += service + "\n"
-        await ctx.respond('```\n' + tmp + '```')
-
+        await message.channel.send('```\n' + tmp + '```')
+        return
+    
     ##### with service name
-
-    #/status <service>
-    @bot.slash_command(guild_ids=[id_enable])
-    async def status(
-        ctx,
-        service: Option(str, "Service you want to check the status of", choices=service_list)
-    ):
-        """Show the service's status."""
-        proc = subprocess.run(f"systemctl status {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True)
-        await ctx.respond("```\n" + proc.stdout + "\n```")
-
+    try:
+        args = parse_arg(message.content)
+        if len(args) == 0:
+            await message.channel.send('Please type service name.')
+            return
+        service = config.get_service(args, message.guild.id) # raise keyerror when not found in config
+    except KeyError as e:
+        await message.channel.send(f'Not found: {e} service is not registered in the config file.')
+        return
+    
+    # PREFIX+status : Show the service status.
+    if message.content.startswith(PREFIX+'status'):
+        proc = subprocess.run(f"systemctl status {service}", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+        await message.channel.send('```\n' + proc.stdout + '```')
+        return
+    
     ##### need permission
-
-    roles=config.get_permitted_roles(id_enable)
-    if len(roles) > 0:
-
-        #/start <service>
-        @bot.slash_command(guild_ids=[id_enable])
-        @permissions.has_any_role(roles)
-        async def start(
-            ctx,
-            service: Option(str, "Service you want to start", choices=service_list)
-        ):
-            """Start the service."""
-            proc = subprocess.run(f"sudo systemctl start {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True)
-            if proc.stderr:
-                await ctx.respond("```\n" + proc.stderr + "\n```")
-            else:
-                await ctx.respond("Process was done. Check if it is active with`/ctl status`. ")
-
-        #/stop <service>
-        @bot.slash_command(guild_ids=[id_enable])
-        @permissions.has_any_role(roles)
-        async def stop(
-            ctx,
-            service: Option(str, "Service you want to stop", choices=service_list)
-        ):
-            """Stop the service."""
+    if not check_permission(message.author,message.guild.id):
+            await message.channel.send(error_Permission_denied)
+            return
+    
+    # PREFIX+start <service.name> : Start the service.
+    if message.content.startswith(PREFIX+'start'):
             try:
-                proc = subprocess.run(f"sudo systemctl stop {config.get_service(id_enable, service)}", shell=True, stdout=PIPE, stderr=PIPE, text=True,timeout=1)
+                proc = subprocess.run(f"sudo systemctl start {service}", shell=True, stdout=PIPE, stderr=PIPE, text=True,timeout=TIMEOUT)
             # respond timeout countermeasures
             except subprocess.TimeoutExpired as e:
                 print(e)
-                await ctx.respond("Process was timed out. Check if it is stoped with`/ctl status`. ")
+                await message.channel.send("Process was timed out. Check if it is stoped with`/ctl status`. ")
                 return
             if proc.stderr:
-                await ctx.respond("```\n" + proc.stderr + "\n```")
+                await message.channel.send("```\n" + proc.stderr + "\n```")
             else:
-                await ctx.respond("Process was done. Check if it is stoped with`/ctl status`. ")
+                await message.channel.send("Process was done. Check if it is stoped with`/ctl status`. ")
+            return
+    
+    # PREFIX+restart <service.name> : Restart the service.
+    if message.content.startswith(PREFIX+'restart'):
+            try:
+                proc = subprocess.run(f"sudo systemctl restart {service}", shell=True, stdout=PIPE, stderr=PIPE, text=True,timeout=TIMEOUT)
+            # respond timeout countermeasures
+            except subprocess.TimeoutExpired as e:
+                print(e)
+                await message.channel.send("Process was timed out. Check if it is stoped with`/ctl status`. ")
+                return
+            if proc.stderr:
+                await message.channel.send("```\n" + proc.stderr + "\n```")
+            else:
+                await message.channel.send("Process was done. Check if it is stoped with`/ctl status`. ")
+            return
 
-bot.run(config.pass_token())
+    # PREFIX+stop <service.name> : Stop the service.
+    if message.content.startswith(PREFIX+'stop'):
+            try:
+                proc = subprocess.run(f"sudo systemctl stop {service}", shell=True, stdout=PIPE, stderr=PIPE, text=True,timeout=TIMEOUT)
+            # respond timeout countermeasures
+            except subprocess.TimeoutExpired as e:
+                print(e)
+                await message.channel.send("Process was timed out. Check if it is stoped with`/ctl status`. ")
+                return
+            if proc.stderr:
+                await message.channel.send("```\n" + proc.stderr + "\n```")
+            else:
+                await message.channel.send("Process was done. Check if it is stoped with`/ctl status`. ")
+            return
+
+client.run(config.pass_token())

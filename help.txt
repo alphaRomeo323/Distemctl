@@ -5,7 +5,9 @@ This bot can remotely manipulate the systemd services of a server.
 ```
 ctl.help : show the list of commands.
 
-ctl.list : Show the list of services.
+ctl.ping : Pong!
+
+ctl.services : Show the list of services.
 
 ctl.status <service.name> : Show the service status.
 
@@ -17,7 +19,4 @@ ctl.restart <service.name> : Restart the service.
 
 ctl.stop <service.name> : Stop the service.
 
-# Last command can only be used by administrator.
-
-ctl.autoconfigcreate [role.name] : Create (Reset) config yml file.
 ```
