@@ -12,6 +12,7 @@ it is written by python.
 ```
 run_user ALL=(root) NOPASSWD: /usr/bin/systemctl start service_name
 run_user ALL=(root) NOPASSWD: /usr/bin/systemctl stop service_name
+run_user ALL=(root) NOPASSWD: /usr/bin/systemctl restart service_name
 run_user ALL=(root) NOPASSWD: /usr/bin/systemctl status service_name
 ```
 4. inivite the bot to server
