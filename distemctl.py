@@ -149,7 +149,7 @@ async def on_message(message):
     
     # PREFIX+status : Show the service status.
     if message.content.startswith(PREFIX+'status'):
-        proc = subprocess.run(f"systemctl status {service}", shell=True, stdout=PIPE, stderr=PIPE, text=True)
+        proc = subprocess.run(f"sudo systemctl status {service}", shell=True, stdout=PIPE, stderr=PIPE, text=True)
         await message.channel.send('```\n' + proc.stdout + '```')
         return
     
